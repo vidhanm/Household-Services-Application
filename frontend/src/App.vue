@@ -191,10 +191,10 @@
                   </v-avatar>
                 </template>
                 <v-list-item-title class="text-subtitle-1 font-weight-medium">
-                  {{ userRole.charAt(0).toUpperCase() + userRole.slice(1) }}
+                  {{ userName }}
                 </v-list-item-title>
                 <v-list-item-subtitle class="text-caption">
-                  {{ userRole }}@example.com
+                  {{ userEmail }}
                 </v-list-item-subtitle>
               </v-list-item>
 
@@ -317,6 +317,8 @@ export default {
     return {
       isLoggedIn: false,
       userRole: null,
+      userEmail: null,
+      userName: null,
       cartItemCount: 0,
       cartItems: [],
       drawer: false,
@@ -348,7 +350,14 @@ export default {
       return this.$vuetify?.display?.mobile ?? false;
     },
     userInitials() {
-      return this.userRole ? this.userRole.charAt(0).toUpperCase() : 'U';
+      if (!this.userName) return 'U';
+      const names = this.userName.split(' ');
+      if (names.length > 1) {
+        // If there are multiple names, use first letter of first and last name
+        return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+      }
+      // If single name, use first letter
+      return names[0].charAt(0).toUpperCase();
     }
   },
   provide() {
@@ -372,9 +381,18 @@ export default {
       const token = localStorage.getItem('token');
       if (token) {
         try {
+          // Decode the token
           const base64Url = token.split('.')[1];
           const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-          const payload = JSON.parse(window.atob(base64));
+          const decodedPayload = decodeURIComponent(
+            atob(base64)
+              .split('')
+              .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+              .join('')
+          );
+          
+          const payload = JSON.parse(decodedPayload);
+          console.log('Decoded token payload:', payload); // Debug log
           
           if (payload.exp < Date.now() / 1000) {
             console.log('Token expired');
@@ -382,14 +400,24 @@ export default {
             return;
           }
           
-          if (!payload.role) {
-            console.error('No role in token payload');
+          // Check for required fields
+          if (!payload.role || !payload.username || !payload.email) {
+            console.error('Missing required claims in token payload:', payload);
             this.logout();
             return;
           }
           
+          // Update user state
           this.userRole = payload.role;
+          this.userEmail = payload.email;
+          this.userName = payload.username;
           this.isLoggedIn = true;
+          
+          console.log('User state updated:', {
+            role: this.userRole,
+            email: this.userEmail,
+            name: this.userName
+          });
         } catch (error) {
           console.error('Error decoding token:', error);
           this.logout();
@@ -397,6 +425,8 @@ export default {
       } else {
         this.isLoggedIn = false;
         this.userRole = null;
+        this.userEmail = null;
+        this.userName = null;
       }
     },
     logout() {
@@ -404,6 +434,8 @@ export default {
       localStorage.removeItem('cart');
       this.isLoggedIn = false;
       this.userRole = null;
+      this.userEmail = null;
+      this.userName = null;
       this.cartItemCount = 0;
       this.drawer = false;
       

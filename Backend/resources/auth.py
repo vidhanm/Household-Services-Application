@@ -111,15 +111,29 @@ class UserLogin(Resource):
         data = request.get_json()
         user = User.query.filter_by(username=data['username']).first()
         if user and check_password_hash(user.password, data['password']):
+            # Print user data for verification
+            print(f"User data: id={user.id}, username={user.username}, email={user.email}, role={user.role}")
+            
+            claims = {
+                'role': user.role,
+                'email': user.email,
+                'username': user.username,
+                'sub': user.id  # Ensure sub claim is set to user ID
+            }
+            print(f"Token claims: {claims}")
+            
             access_token = create_access_token(
                 identity=user.id,
-                additional_claims={'role': user.role}
+                additional_claims=claims
             )
             refresh_token = create_refresh_token(identity=user.id)
+            
             return {
                 'access_token': access_token,
                 'refresh_token': refresh_token,
-                'user_role': user.role
+                'user_role': user.role,
+                'user_email': user.email,  # Include these in response
+                'user_name': user.username
             }, 200
         return {'message': 'Invalid credentials'}, 401
 
