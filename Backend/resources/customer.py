@@ -5,8 +5,11 @@ from config import db
 from datetime import datetime
 from http import HTTPStatus
 from pprint import pprint
+from cache import cache 
+
 
 class SearchServices(Resource):
+    @cache.cached(timeout=60, key_prefix='categories')
     def get(self):
         try:
             # Get only approved professionals
@@ -220,7 +223,6 @@ class CompletedServices(Resource):
                     "remarks": request.remarks or "No remarks",
                     "professional": {
                         "experience": professional.experience if professional else None,
-                       # "description": professional.description if professional else None
                     } if professional else None
                 })
 
@@ -271,7 +273,6 @@ class OngoingServices(Resource):
                     "status": request.service_status.capitalize(),
                     "professional": {
                         "experience": professional.experience if professional else None,
-                        #"description": professional.description if professional else None
                     } if professional else None
                 })
 

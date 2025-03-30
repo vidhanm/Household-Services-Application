@@ -56,14 +56,14 @@
                   density="comfortable"
                   color="primary"
                 ></v-checkbox>
-                <v-btn
+                <!-- <v-btn
                   variant="text"
                   color="primary"
                   class="font-weight-medium"
                   @click="forgotPassword"
                 >
                   Forgot password?
-                </v-btn>
+                </v-btn> -->
               </div>
 
               <!-- Sign In Button -->
@@ -81,7 +81,7 @@
               </v-btn>
 
               <!-- Social Login -->
-              <div class="text-center mb-6">
+              <!-- <div class="text-center mb-6">
                 <p class="text-medium-emphasis mb-4">Or continue with</p>
                 <div class="d-flex justify-center gap-4">
                   <v-btn
@@ -103,7 +103,7 @@
                     color="grey-darken-1"
                   ></v-btn>
                 </div>
-              </div>
+              </div> -->
 
               <!-- Register Link -->
               <div class="text-center">

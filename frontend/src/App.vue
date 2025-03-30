@@ -153,14 +153,14 @@
       </template>
 
       <!-- Theme Toggle -->
-      <v-btn
+      <!-- <v-btn
         icon
         variant="text"
         @click="toggleTheme"
         class="ml-2"
       >
         <!-- <v-icon>{{ isDark() ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon> -->
-      </v-btn>
+      <!-- </v-btn>  -->
 
       <!-- User Menu -->
       <template v-if="isLoggedIn">
@@ -327,13 +327,13 @@ export default {
         { title: 'Home', icon: 'mdi-home', to: '/customer-dashboard' },
         { title: 'Ongoing', icon: 'mdi-clock-outline', to: '/customer/ongoing-services' },
         { title: 'Completed', icon: 'mdi-check-circle-outline', to: '/customer/completed-services' },
-        { title: 'Summary', icon: 'mdi-file-document-outline', to: '/customer/summary' },
+        // { title: 'Summary', icon: 'mdi-file-document-outline', to: '/customer/summary' },
       ],
       professionalNavItems: [
         { title: 'Dashboard', icon: 'mdi-view-dashboard', to: '/professional-dashboard' },
-        { title: 'Schedule', icon: 'mdi-calendar-clock', to: '/professional/schedule' },
+        // { title: 'Schedule', icon: 'mdi-calendar-clock', to: '/professional/schedule' },
         { title: 'History', icon: 'mdi-history', to: '/professional/history' },
-        { title: 'Earnings', icon: 'mdi-currency-inr', to: '/professional/earnings' },
+        // { title: 'Earnings', icon: 'mdi-currency-inr', to: '/professional/earnings' },
       ],
       adminNavItems: [
         { title: 'Users', icon: 'mdi-account-group', to: '/admin/users' },
@@ -341,7 +341,7 @@ export default {
         { title: 'Export Report', icon: 'mdi-file-chart', to: '/admin/export-report' },
         { title: 'Services', icon: 'mdi-briefcase', to: '/admin/services' },
         { title: 'Analytics', icon: 'mdi-chart-bar', to: '/admin/analytics' },
-        { title: 'Settings', icon: 'mdi-cog', to: '/admin/settings' }
+        // { title: 'Settings', icon: 'mdi-cog', to: '/admin/settings' }
       ]
     }
   },

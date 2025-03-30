@@ -16,7 +16,7 @@ class Service(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
-    base_duration = db.Column(db.Integer, default=60)  # Base duration in minutes
+    base_duration = db.Column(db.Integer, default=60)  
     price_per_hour = db.Column(db.Float)  # Additional price per hour
     time_required = db.Column(db.Integer)
     description = db.Column(db.Text)

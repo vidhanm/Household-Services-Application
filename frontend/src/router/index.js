@@ -12,6 +12,7 @@ import AdminServices from '@/components/admin/AdminServices.vue'
 import AdminVerifyProfessionals from '@/components/admin/AdminVerifyProfessionals.vue'
 import AdminExportReport from '@/components/admin/AdminExportReport.vue'
 import AdminAnalytics from '@/components/adminanalytics.vue'
+import ProfessionalHistory from '@/components/ProfessionalHistory'
 //import AdminDashboard from '../components/AdminDashboard.vue';
 
 const routes = [
@@ -99,6 +100,12 @@ const routes = [
       }
     ],
     meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/professional/history',
+    name: 'ProfessionalHistory',
+    component: () => import('../components/ProfessionalHistory.vue'),
+    meta: { requiresAuth: true, role: 'professional' }
   }
 ];
 

@@ -258,8 +258,11 @@ export default {
       this.snackbarColor = 'success';
     },
     closeBookingModal() {
+      console.log("close booking modal called")
       this.showBookingModal = false;
-      this.selectedService = null;
+      this.$nextTick(() => {
+    this.selectedService = null;
+  });
     },
     filterServices() {
       // The filtering is handled by the computed property
