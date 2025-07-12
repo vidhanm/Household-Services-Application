@@ -1,200 +1,314 @@
 <template>
-  <v-dialog
-    v-model="dialog"
-    max-width="500"
-    persistent
-  >
-    <v-card>
-      <v-card-title class="text-h5">
-        Book {{ service.name }}
-      </v-card-title>
+  <div class="booking-modal-wrapper">
+    <v-dialog
+      v-model="localDialog"
+      max-width="500"
+      persistent
+      @update:model-value="handleDialogChange"
+    >
+      <v-card class="booking-modal">
+        <v-card-title class="text-h5 pb-2">
+          Book {{ service ? service.name : 'Service' }}
+          <v-btn
+            icon="mdi-close"
+            density="compact"
+            variant="text"
+            @click="handleClose"
+            class="float-right"
+          ></v-btn>
+        </v-card-title>
 
-      <v-card-text>
-        <v-form ref="form" v-model="valid">
-          <v-menu
-            ref="dateMenu"
-            v-model="dateMenu"
-            :close-on-content-click="false"
-            transition="scale-transition"
-            offset-y
-            min-width="auto"
-          >
-            <template #activator="{ props }">
-              <v-text-field
-                v-model="formattedDate"
-                label="Booking Date"
-                prepend-icon="mdi-calendar"
-                readonly
-                v-bind="props"
-                :rules="dateRules"
-              ></v-text-field>
-            </template>
-            <v-date-picker
-              v-model="bookingDate"
-              :min="minDate"
-              @update:model-value="handleDateSelect"
-            ></v-date-picker>
-          </v-menu>
+        <v-divider></v-divider>
 
-          <v-select
-            v-model="bookingTime"
-            :items="timeSlots"
-            label="Service Start Time"
-            prepend-icon="mdi-clock-outline"
-            :rules="timeRules"
-          ></v-select>
+        <v-card-text class="pt-4">
+          <v-form ref="bookingForm" v-model="formValid">
+            <!-- Date Field -->
+            <v-menu
+              v-model="dateMenu"
+              :close-on-content-click="false"
+              transition="scale-transition"
+              min-width="auto"
+            >
+              <template v-slot:activator="{ props }">
+                <v-text-field
+                  v-model="dateDisplay"
+                  label="Select Date"
+                  prepend-inner-icon="mdi-calendar"
+                  v-bind="props"
+                  variant="outlined"
+                  density="comfortable"
+                  class="mb-3"
+                  :rules="[v => !!v || 'Date is required']"
+                ></v-text-field>
+              </template>
+              <v-date-picker
+                v-model="bookingDate"
+                :min="minDate"
+                @update:model-value="dateSelected"
+              ></v-date-picker>
+            </v-menu>
 
-          <v-select
-            v-model="duration"
-            :items="durationOptions"
-            label="Duration"
-            prepend-icon="mdi-clock-time-four-outline"
-            :rules="durationRules"
-          ></v-select>
+            <!-- Time Field -->
+            <v-select
+              v-model="bookingTime"
+              :items="availableTimes"
+              label="Select Time"
+              prepend-inner-icon="mdi-clock-outline"
+              variant="outlined"
+              density="comfortable"
+              item-title="text"
+              item-value="value"
+              class="mb-3"
+              :rules="[v => !!v || 'Time is required']"
+              return-object
+            ></v-select>
 
-          <v-divider class="my-4"></v-divider>
+            <!-- Duration Field -->
+            <v-select
+              v-model="bookingDuration"
+              :items="durationOptions"
+              label="Select Duration"
+              prepend-inner-icon="mdi-clock-time-four-outline"
+              variant="outlined"
+              density="comfortable"
+              item-title="text"
+              item-value="value"
+              class="mb-4"
+              :rules="[v => !!v || 'Duration is required']"
+              return-object
+              @update:model-value="updatePrice"
+            ></v-select>
 
-          <v-list-item>
-            <template v-slot:prepend>
-              <v-icon color="primary">mdi-currency-inr</v-icon>
-            </template>
-            <v-list-item-title>Price Breakdown</v-list-item-title>
-            <template v-slot:append>
-              <div class="text-right">
-                <div>Base Price: ₹{{ service.price }}</div>
-                <div v-if="additionalPrice > 0">Additional: ₹{{ additionalPrice }}</div>
-                <div class="text-h6 primary--text">Total: ₹{{ totalPrice }}</div>
+            <!-- Price Information -->
+            <v-sheet class="pa-4 bg-grey-lighten-4 rounded-lg mb-3" v-if="service">
+              <div class="d-flex align-center mb-2">
+                <v-icon icon="mdi-currency-inr" color="primary" class="mr-2"></v-icon>
+                <span class="text-subtitle-1 font-weight-bold">Price Details</span>
               </div>
-            </template>
-          </v-list-item>
-        </v-form>
-      </v-card-text>
+              <div class="d-flex justify-space-between mt-2">
+                <span>Base Price:</span>
+                <span class="font-weight-medium">₹{{ service.price }}</span>
+              </div>
+              <div class="d-flex justify-space-between mt-1" v-if="additionalPrice > 0">
+                <span>Additional Time:</span>
+                <span class="font-weight-medium">₹{{ additionalPrice }}</span>
+              </div>
+              <v-divider class="my-2"></v-divider>
+              <div class="d-flex justify-space-between mt-1">
+                <span class="text-subtitle-1 font-weight-bold">Total:</span>
+                <span class="text-subtitle-1 font-weight-bold primary--text">₹{{ totalPrice }}</span>
+              </div>
+            </v-sheet>
+          </v-form>
+        </v-card-text>
 
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn
-          color="grey-darken-1"
-          variant="text"
-          @click="closeDialog"
-        >
-          Cancel
-        </v-btn>
-        <v-btn
-          color="primary"
-          :disabled="!valid"
-          @click="confirmBooking"
-        >
-          Book Now
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        <v-divider></v-divider>
+
+        <v-card-actions class="pa-4">
+          <v-btn
+            color="grey-darken-1"
+            variant="text"
+            @click="handleClose"
+          >
+            Close
+          </v-btn>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            variant="elevated"
+            @click="handleAddToCart"
+            :disabled="!formValid"
+          >
+            Add to Cart
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </div>
 </template>
 
 <script>
 export default {
   name: 'BookingModal',
   props: {
-    modelValue: Boolean,
+    modelValue: {
+      type: Boolean,
+      default: false
+    },
     service: {
       type: Object,
-      required: true
+      default: null
     }
   },
   data() {
     return {
-      dialog: this.modelValue,
-      valid: true,
+      localDialog: this.modelValue,
+      formValid: false,
       dateMenu: false,
-      bookingDate: new Date().toISOString().substr(0, 10),
-      bookingTime: '9:00',
-      duration: '60',
-      timeSlots: [
-        '9:00', '10:00', '11:00', '12:00', '13:00',
-        '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
+      bookingDate: new Date().toISOString().slice(0, 10),
+      dateDisplay: '',
+      bookingTime: null,
+      bookingDuration: null,
+      availableTimes: [
+        { text: '9:00 AM', value: '09:00' },
+        { text: '10:00 AM', value: '10:00' },
+        { text: '11:00 AM', value: '11:00' },
+        { text: '12:00 PM', value: '12:00' },
+        { text: '1:00 PM', value: '13:00' },
+        { text: '2:00 PM', value: '14:00' },
+        { text: '3:00 PM', value: '15:00' },
+        { text: '4:00 PM', value: '16:00' },
+        { text: '5:00 PM', value: '17:00' },
+        { text: '6:00 PM', value: '18:00' }
       ],
       durationOptions: [
-        { text: '1 hour', value: '60' },
-        { text: '2 hours', value: '120' },
-        { text: '3 hours', value: '180' },
-        { text: '4 hours', value: '240' }
+        { text: '1 Hour', value: 60 },
+        { text: '2 Hours', value: 120 },
+        { text: '3 Hours', value: 180 },
+        { text: '4 Hours', value: 240 }
       ],
-      dateRules: [
-        v => !!v || 'Date is required',
-        v => {
-          const selectedDate = new Date(v);
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          return selectedDate >= today || 'Cannot select past dates';
-        }
-      ],
-      timeRules: [v => !!v || 'Time is required'],
-      durationRules: [v => !!v || 'Duration is required'],
-      formattedDate: ''
-    }
+      additionalPrice: 0
+    };
   },
   computed: {
     minDate() {
-      return new Date().toISOString().substr(0, 10)
-    },
-    additionalPrice() {
-      const additionalHours = (parseInt(this.duration) - 60) / 60
-      return additionalHours > 0 ? Math.round(additionalHours * (this.service.price * 0.75)) : 0
+      return new Date().toISOString().slice(0, 10);
     },
     totalPrice() {
-      return this.service.price + this.additionalPrice
+      if (!this.service) return 0;
+      return this.service.price + this.additionalPrice;
     }
   },
   watch: {
-    modelValue(val) {
-      this.dialog = val
+    modelValue: {
+      immediate: true,
+      handler(newVal) {
+        this.localDialog = newVal;
+        if (newVal) {
+          this.resetForm();
+        }
+      }
     },
-    dialog(val) {
-      this.$emit('update:modelValue', val)
+    localDialog(newVal) {
+      if (newVal !== this.modelValue) {
+        this.$emit('update:modelValue', newVal);
+      }
     }
   },
+  mounted() {
+    this.initializeForm();
+  },
   methods: {
-    closeDialog() {
-      this.dialog = false
-      this.$refs.form?.reset()
+    initializeForm() {
+      // Set default values
+      this.dateDisplay = this.formatDate(new Date());
+      this.bookingTime = this.availableTimes[0];
+      this.bookingDuration = this.durationOptions[0];
+      this.updatePrice();
     },
-    confirmBooking() {
-      if (!this.$refs.form?.validate()) return
-
-      const bookingDetails = {
-        ...this.service,
-        bookingDate: this.bookingDate,
-        bookingTime: this.bookingTime,
-        duration: parseInt(this.duration),
-        totalPrice: this.totalPrice
+    resetForm() {
+      this.bookingDate = new Date().toISOString().slice(0, 10);
+      this.dateDisplay = this.formatDate(new Date());
+      this.bookingTime = this.availableTimes[0];
+      this.bookingDuration = this.durationOptions[0];
+      this.updatePrice();
+      
+      this.$nextTick(() => {
+        if (this.$refs.bookingForm) {
+          this.$refs.bookingForm.resetValidation();
+        }
+      });
+    },
+    formatDate(date) {
+      if (!date) return '';
+      
+      if (typeof date === 'string') {
+        date = new Date(date);
       }
-
-      this.$emit('confirm-booking', bookingDetails)
-      this.closeDialog()
-    },
-    handleDateSelect(date) {
-      this.dateMenu = false;
-      this.bookingDate = date;
-      this.formattedDate = this.formatDate(date);
-    },
-    formatDate(dateStr) {
-      if (!dateStr) return '';
-      const date = new Date(dateStr);
+      
+      if (isNaN(date.getTime())) {
+        return '';
+      }
+      
       return date.toLocaleDateString('en-US', {
         weekday: 'short',
         year: 'numeric',
         month: 'short',
         day: 'numeric'
       });
+    },
+    dateSelected(date) {
+      this.dateMenu = false;
+      if (date) {
+        this.bookingDate = date;
+        this.dateDisplay = this.formatDate(date);
+      }
+    },
+    updatePrice() {
+      if (!this.service || !this.bookingDuration) {
+        this.additionalPrice = 0;
+        return;
+      }
+      
+      const baseHours = 1; // First hour is base price
+      const additionalHours = (this.bookingDuration.value / 60) - baseHours;
+      
+      if (additionalHours > 0) {
+        // Additional hours cost 75% of the base price
+        this.additionalPrice = Math.round(additionalHours * (this.service.price * 0.75));
+      } else {
+        this.additionalPrice = 0;
+      }
+    },
+    handleDialogChange(val) {
+      if (!val) {
+        this.handleClose();
+      }
+    },
+    handleClose() {
+      this.localDialog = false;
+      this.$emit('update:modelValue', false);
+      this.$emit('cancel');
+    },
+    handleAddToCart() {
+      if (!this.$refs.bookingForm) return;
+      
+      // Create booking details object
+      const bookingDetails = {
+        ...this.service,
+        bookingDate: this.bookingDate,
+        bookingTime: this.bookingTime.value,
+        bookingTimeDisplay: this.bookingTime.text,
+        duration: this.bookingDuration.value,
+        durationDisplay: this.bookingDuration.text,
+        additionalPrice: this.additionalPrice,
+        totalPrice: this.totalPrice
+      };
+      
+      // Emit event with booking details
+      this.$emit('confirm-booking', bookingDetails);
+      
+      // Close dialog
+      this.handleClose();
     }
-  },
-  created() {
-    this.formattedDate = this.formatDate(this.bookingDate);
-  },
-  mounted() {
-    this.$nextTick(() => {
-      this.$refs.form?.validate();
-    });
-  },
-}
+  }
+};
 </script>
+
+<style scoped>
+.booking-modal .v-card-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.booking-modal .float-right {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+}
+
+.primary--text {
+  color: rgb(var(--v-theme-primary)) !important;
+}
+</style>

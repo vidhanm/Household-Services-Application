@@ -94,7 +94,7 @@
             </v-card-title>
             <v-divider></v-divider>
             <v-card-text class="pa-4">
-              <canvas id="userGrowthChart" height="300"></canvas>
+              <canvas ref="userGrowthChart" height="300"></canvas>
             </v-card-text>
           </v-card>
         </v-col>
@@ -108,7 +108,7 @@
             </v-card-title>
             <v-divider></v-divider>
             <v-card-text class="pa-4">
-              <canvas id="userRolesChart" height="300"></canvas>
+              <canvas ref="userRolesChart" height="300"></canvas>
             </v-card-text>
           </v-card>
         </v-col>
@@ -125,7 +125,7 @@
             </v-card-title>
             <v-divider></v-divider>
             <v-card-text class="pa-4">
-              <canvas id="popularServicesChart" height="300"></canvas>
+              <canvas ref="popularServicesChart" height="300"></canvas>
             </v-card-text>
           </v-card>
         </v-col>
@@ -139,7 +139,7 @@
             </v-card-title>
             <v-divider></v-divider>
             <v-card-text class="pa-4">
-              <canvas id="serviceRevenueChart" height="300"></canvas>
+              <canvas ref="serviceRevenueChart" height="300"></canvas>
             </v-card-text>
           </v-card>
         </v-col>
@@ -156,7 +156,7 @@
             </v-card-title>
             <v-divider></v-divider>
             <v-card-text class="pa-4">
-              <canvas id="statusDistributionChart" height="250"></canvas>
+              <canvas ref="statusDistributionChart" height="250"></canvas>
             </v-card-text>
           </v-card>
         </v-col>
@@ -170,7 +170,7 @@
             </v-card-title>
             <v-divider></v-divider>
             <v-card-text class="pa-4">
-              <canvas id="revenueTrendChart" height="250"></canvas>
+              <canvas ref="revenueTrendChart" height="250"></canvas>
             </v-card-text>
           </v-card>
         </v-col>
@@ -291,17 +291,19 @@ export default {
         }
         
         this.analytics = await response.json();
-        this.renderCharts();
       } catch (error) {
         console.error('Error fetching analytics data:', error);
         this.showSnackbar('Failed to load analytics data', 'error');
-      } finally {
-        this.loading = false;
+        throw error; // Re-throw to be caught in mounted
       }
     },
     
     renderCharts() {
-      this.$nextTick(() => {
+      console.log('renderCharts called');
+      // Check that DOM is ready and canvas elements are rendered
+      if (this.$refs.userGrowthChart) {
+        console.log('Canvas elements found via refs, rendering charts');
+        
         // Destroy any existing charts to prevent duplicates
         Object.values(this.charts).forEach(chart => {
           if (chart) chart.destroy();
@@ -314,12 +316,19 @@ export default {
         this.createServiceRevenueChart();
         this.createStatusDistributionChart();
         this.createRevenueTrendChart();
-      });
+      } else {
+        console.log('Canvas elements not ready yet, retrying in a moment');
+        // Retry after a short delay to allow Vue to render the template
+        setTimeout(() => this.renderCharts(), 100);
+      }
     },
     
     createUserGrowthChart() {
-      const ctx = document.getElementById('userGrowthChart');
-      if (!ctx) return;
+      const ctx = this.$refs.userGrowthChart;
+      if (!ctx) {
+        console.error('User Growth Chart canvas element not found');
+        return;
+      }
       
       const labels = this.analytics.users_growth.map(item => this.formatMonth(item.month));
       const data = this.analytics.users_growth.map(item => item.count);
@@ -370,8 +379,11 @@ export default {
     },
     
     createUserRolesChart() {
-      const ctx = document.getElementById('userRolesChart');
-      if (!ctx) return;
+      const ctx = this.$refs.userRolesChart;
+      if (!ctx) {
+        console.error('User Roles Chart canvas element not found');
+        return;
+      }
       
       const labels = this.analytics.user_roles.map(item => this.capitalizeFirstLetter(item.role));
       const data = this.analytics.user_roles.map(item => item.count);
@@ -413,8 +425,11 @@ export default {
     },
     
     createPopularServicesChart() {
-      const ctx = document.getElementById('popularServicesChart');
-      if (!ctx) return;
+      const ctx = this.$refs.popularServicesChart;
+      if (!ctx) {
+        console.error('Popular Services Chart canvas element not found');
+        return;
+      }
       
       const labels = this.analytics.popular_services.map(item => item.service);
       const data = this.analytics.popular_services.map(item => item.count);
@@ -453,8 +468,11 @@ export default {
     },
     
     createServiceRevenueChart() {
-      const ctx = document.getElementById('serviceRevenueChart');
-      if (!ctx) return;
+      const ctx = this.$refs.serviceRevenueChart;
+      if (!ctx) {
+        console.error('Service Revenue Chart canvas element not found');
+        return;
+      }
       
       const labels = this.analytics.service_revenue.map(item => item.service);
       const data = this.analytics.service_revenue.map(item => item.revenue);
@@ -492,8 +510,11 @@ export default {
     },
     
     createStatusDistributionChart() {
-      const ctx = document.getElementById('statusDistributionChart');
-      if (!ctx) return;
+      const ctx = this.$refs.statusDistributionChart;
+      if (!ctx) {
+        console.error('Status Distribution Chart canvas element not found');
+        return;
+      }
       
       const labels = this.analytics.status_distribution.map(item => this.capitalizeFirstLetter(item.status));
       const data = this.analytics.status_distribution.map(item => item.count);
@@ -544,8 +565,11 @@ export default {
     },
     
     createRevenueTrendChart() {
-      const ctx = document.getElementById('revenueTrendChart');
-      if (!ctx) return;
+      const ctx = this.$refs.revenueTrendChart;
+      if (!ctx) {
+        console.error('Revenue Trend Chart canvas element not found');
+        return;
+      }
       
       const labels = this.analytics.revenue_trend.map(item => this.formatMonth(item.month));
       const data = this.analytics.revenue_trend.map(item => item.revenue);
@@ -630,10 +654,29 @@ export default {
     }
   },
   async mounted() {
-    await Promise.all([
-      this.fetchDashboardStats(),
-      this.fetchAnalytics()
-    ]);
+    console.log('Component mounted');
+    
+    try {
+      // Fetch the data first
+      await Promise.all([
+        this.fetchDashboardStats(),
+        this.fetchAnalytics()
+      ]);
+      
+      console.log('Data fetched, setting loading to false');
+      // Set loading to false to show the template with canvas elements
+      this.loading = false;
+      
+      // Wait for the DOM to update after loading is set to false
+      this.$nextTick(() => {
+        console.log('DOM updated, attempting to render charts');
+        this.renderCharts();
+      });
+    } catch (error) {
+      console.error('Error initializing dashboard:', error);
+      this.loading = false;
+      this.showSnackbar('Failed to load dashboard data', 'error');
+    }
   },
   beforeUnmount() {
     // Clean up charts

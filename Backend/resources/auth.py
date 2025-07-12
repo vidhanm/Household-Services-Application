@@ -9,12 +9,14 @@ from pprint import pprint
 import os
 from werkzeug.utils import secure_filename
 from utils.otp import generate_otp, store_otp, verify_otp, send_otp_email
+from cache import cache
 
 UPLOAD_FOLDER = 'uploads/professional_docs'
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 class UserRegister(Resource):
     def post(self):

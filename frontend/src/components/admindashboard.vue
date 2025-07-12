@@ -76,7 +76,7 @@
     </v-row>
 
     <!-- Quick Actions -->
-    <v-row class="mb-6">
+    <!-- <v-row class="mb-6">
       <v-col cols="12">
         <v-card>
           <v-card-title class="d-flex align-center py-3 px-6">
@@ -134,7 +134,7 @@
           </v-card-text>
         </v-card>
       </v-col>
-    </v-row>
+    </v-row> -->
 
     <!-- Main Content -->
     <v-row>
@@ -190,12 +190,12 @@ export default {
             'Accept': 'application/json'
           }
         });
-        
         if (!response.ok) {
           throw new Error('Failed to fetch dashboard stats');
         }
         
         const data = await response.json();
+        console.log(data)
         this.totalUsers = data.total_users || 0;
         this.pendingVerifications = data.pending_verifications || 0;
         this.activeServices = data.active_services || 0;
